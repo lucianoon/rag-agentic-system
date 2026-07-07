@@ -99,10 +99,8 @@ rag-agentic-system/
 │   ├── retrieval.py           # Recuperação de documentos
 │   ├── types.py               # Modelos de dados
 │   └── vector_store.py        # Armazenamento vetorial
-├── data/
-│   └── processed/             # Coloque documentos aqui
-└── docs/
-    └── REFINEMENT_PLAN.md     # Roadmap de desenvolvimento
+└── data/
+    └── processed/             # Coloque documentos aqui
 ```
 
 ## 🔧 Explicação do Código
@@ -450,7 +448,7 @@ Este projeto está licenciado sob a Licença MIT.
 
 ## 📚 Próximos Passos
 
-Veja [`docs/REFINEMENT_PLAN.md`](docs/REFINEMENT_PLAN.md) para melhorias planejadas:
+Melhorias planejadas:
 - Integração com LLMs (OpenAI, Anthropic)
 - Backend FAISS para vector store
 - Capacidades de web scraping
