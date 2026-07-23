@@ -373,12 +373,19 @@ memory:
 
 ### Testando o Sistema
 
-```bash
-# Instalar dependências de desenvolvimento
-pip install pytest black flake8
+O projeto possui uma suíte de testes em `tests/` cobrindo chunking e ingestão de documentos, busca vetorial por similaridade de cosseno, fallback de embeddings para TF-IDF, memória de tarefas em SQLite, carregamento de configuração YAML e o fluxo completo do agente.
 
-# Executar testes
-pytest tests/
+Os testes **não** precisam de LLM, chaves de API nem acesso à rede: o caminho de fallback TF-IDF é forçado, então nenhum modelo do sentence-transformers é baixado.
+
+```bash
+# Instalar dependências mínimas para os testes
+pip install numpy scikit-learn pyyaml pytest
+
+# Executar a suíte completa
+pytest
+
+# Executar um módulo específico
+pytest tests/test_vector_store.py -v
 
 # Formatar código
 black src/ tests/
@@ -386,6 +393,8 @@ black src/ tests/
 # Verificar qualidade do código
 flake8 src/ tests/
 ```
+
+A mesma suíte é executada automaticamente no CI (GitHub Actions) a cada push e pull request na branch `main` — veja `.github/workflows/ci.yml`.
 
 ### Adicionando Novos Retrievers
 
