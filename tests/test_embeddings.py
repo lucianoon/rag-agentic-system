@@ -85,6 +85,17 @@ def test_fit_is_noop_when_fallback_disabled(force_tfidf):
     assert backend._vectorizer is None
 
 
+def test_unfitted_backend_with_stopword_only_text_returns_zero_vectors(force_tfidf):
+    # Regression test: fitting TF-IDF on stop-word-only text used to raise
+    # sklearn's "empty vocabulary" ValueError.
+    backend = make_backend()
+
+    vectors = backend.embed(["anything at all"])
+
+    assert vectors.shape == (1, 8)
+    assert not np.any(vectors)
+
+
 def test_fit_is_noop_on_empty_corpus(force_tfidf):
     backend = make_backend()
 

@@ -112,6 +112,18 @@ def test_agent_query_without_documents_returns_fallback_message(tmp_path, force_
     assert response.references == []
 
 
+def test_agent_stopword_only_query_on_empty_system_does_not_crash(tmp_path, force_tfidf):
+    # Regression test: a stop-word-only query against an empty system used to
+    # crash while auto-fitting the TF-IDF vectorizer.
+    (tmp_path / "docs").mkdir()
+    agent = AgenticRAG(build_context(tmp_path))
+    agent.initialize()
+
+    response = agent.query("anything at all?")
+
+    assert "couldn't find relevant information" in response.answer
+
+
 def test_agent_add_documents_returns_zero_for_empty_or_unsupported(tmp_path, force_tfidf):
     agent = AgenticRAG(build_context(tmp_path))
 

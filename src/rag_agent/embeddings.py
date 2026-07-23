@@ -111,7 +111,12 @@ class EmbeddingBackend:
 
         if not hasattr(vectorizer, "vocabulary_"):
             logger.info("TF-IDF vectorizer not fitted. Fitting on provided texts (%d).", len(texts))
-            vectorizer.fit(list(texts))
+            try:
+                vectorizer.fit(list(texts))
+            except ValueError:
+                # e.g. texts contain only stop words -> empty vocabulary.
+                logger.warning("Could not fit TF-IDF on provided texts; returning zero vectors.")
+                return np.zeros((len(texts), self.config.vector_dimension), dtype=np.float32)
 
         matrix = vectorizer.transform(list(texts))
         dense_matrix = cast(Any, matrix).toarray()
