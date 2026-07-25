@@ -21,3 +21,9 @@ def force_tfidf(monkeypatch):
         "has_sentence_transformer",
         property(lambda self: False),
     )
+
+
+@pytest.fixture(autouse=True)
+def no_anthropic_key(monkeypatch):
+    """Keep tests deterministic: the auto provider must resolve to scripted."""
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)

@@ -45,8 +45,11 @@ agent:
   temperature: 0.2
   reasoning_steps: 3
 
-# LLM configuration (optional - currently not implemented)
+# LLM configuration for the agent loop
 llm:
-  provider: null  # "openai", "anthropic", null for no LLM
-  model: null
-  api_key: null  # Or set via OPENAI_API_KEY environment variable
+  # null/auto = Claude when ANTHROPIC_API_KEY is available, else the offline
+  # scripted model; "anthropic" = always Claude; "scripted" = always offline.
+  provider: null
+  model: "claude-opus-4-8"
+  max_tokens: 1024
+  # Credentials come from the ANTHROPIC_API_KEY environment variable (or .env).

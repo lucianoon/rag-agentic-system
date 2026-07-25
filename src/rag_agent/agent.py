@@ -5,21 +5,38 @@ import logging
 from pathlib import Path
 from typing import List, Optional
 
-from .config import AppConfig
+from .llm import AgentModel, build_agent_model
+from .loop import AgentLoop
 from .pipeline import ExecutionContext, Pipeline
 from .retrieval import chunk_text
-from .types import AgentResponse, Document
+from .types import AgentResponse, Document, TaskLog
 
 logger = logging.getLogger(__name__)
 
 
 class AgenticRAG:
-    """Main RAG agent with autonomous reasoning capabilities."""
+    """RAG agent driven by a tool-use loop.
 
-    def __init__(self, context: ExecutionContext) -> None:
+    The model behind the loop is pluggable (``config.llm``): Claude with
+    native tool use when a key is available, or a deterministic scripted
+    model that keeps the exact same loop running offline.
+    """
+
+    def __init__(self, context: ExecutionContext, model: Optional[AgentModel] = None) -> None:
         self.context = context
         self.pipeline = Pipeline(context)
+        self._model = model
         self._initialized = False
+
+    @property
+    def model(self) -> AgentModel:
+        if self._model is None:
+            self._model = build_agent_model(
+                self.context.config.llm,
+                temperature=self.context.config.agent.temperature,
+            )
+            logger.info("Agent model: %s", self._model.mode)
+        return self._model
 
     def initialize(self) -> None:
         """Initialize the agent and prepare resources."""
@@ -31,18 +48,8 @@ class AgenticRAG:
         self._initialized = True
         logger.info("RAG Agentic System ready")
 
-    def _generate_simple_answer(self, query: str, documents: List[Document]) -> str:
-        """Generate a simple answer from retrieved documents (no LLM)."""
-        if not documents:
-            return "I don't have enough information to answer this question."
-
-        # Simple extraction: return most relevant document content
-        context = "\n\n".join([f"From {doc.metadata.get('path', doc.id)}:\n{doc.content[:500]}" for doc in documents[:3]])
-
-        return f"Based on the retrieved documents:\n\n{context}\n\n(Note: This is a simple retrieval. For better answers, configure an LLM in the config file.)"
-
     def query(self, question: str, top_k: Optional[int] = None) -> AgentResponse:
-        """Process a user query and return an answer with reasoning steps."""
+        """Run a task through the agent loop and return the final answer."""
         if not self._initialized:
             self.initialize()
 
@@ -55,25 +62,33 @@ class AgenticRAG:
 
         logger.info("Processing query: %s", question)
 
-        # Step 1: Retrieve relevant documents
-        documents = self.pipeline.retrieve_documents(query=question, top_k=top_k)
+        loop = AgentLoop(self.context, self.model, default_top_k=top_k)
+        result = loop.run(question)
 
-        if not documents:
-            logger.warning("No relevant documents found for query")
-            return AgentResponse(
-                answer="I couldn't find relevant information to answer your question. Try adding more documents to the system.",
-                references=[],
-                steps=[],
-            )
+        metadata = {
+            "agent_mode": self.model.mode,
+            "iterations": result.iterations,
+            "tool_calls": result.tool_calls,
+        }
+        if result.confidence is not None:
+            metadata["confidence"] = result.confidence
+            metadata["verified"] = result.verified
 
-        # Step 2: Generate answer (simple version without LLM)
-        answer = self._generate_simple_answer(question, documents)
+        log = TaskLog(task_id=question, query=question, steps=result.steps, metadata=metadata)
+        self.context.memory.store(log)
 
-        # Step 3: Create response with metadata
-        response = self.pipeline.process(query=question, answer=answer, documents=documents)
-
-        logger.info("Query processed successfully")
-        return response
+        logger.info(
+            "Query processed: iterations=%d tool_calls=%d mode=%s",
+            result.iterations,
+            result.tool_calls,
+            self.model.mode,
+        )
+        return AgentResponse(
+            answer=result.answer,
+            references=result.references,
+            steps=result.steps,
+            metadata=metadata,
+        )
 
     def add_documents(self, file_paths: List[str]) -> int:
         """Add specific text/Markdown documents to the active vector store.
