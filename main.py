@@ -4,42 +4,20 @@ import logging
 import sys
 from pathlib import Path
 
-from src.rag_agent import (
-    AgenticRAG,
-    AppConfig,
-    EmbeddingBackend,
-    ExecutionContext,
-    FileSystemRetriever,
-    MemoryStore,
-    VectorStore,
-    load_config,
-)
+from src.rag_agent import AgenticRAG, create_context, load_config
+
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:  # python-dotenv is optional; env vars still work without it
+    pass
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
-
-
-def create_context(config: AppConfig) -> ExecutionContext:
-    """Create the execution context from configuration."""
-    embeddings = EmbeddingBackend(config=config.embeddings)
-    vector_store = VectorStore(config=config.vector_store)
-    retriever = FileSystemRetriever(
-        config=config.retrieval,
-        embeddings=embeddings,
-        vector_store=vector_store,
-    )
-    memory = MemoryStore(config=config.memory)
-
-    return ExecutionContext(
-        config=config,
-        embeddings=embeddings,
-        retriever=retriever,
-        vector_store=vector_store,
-        memory=memory,
-    )
 
 
 def run_interactive(agent: AgenticRAG) -> None:

@@ -25,6 +25,7 @@ dist/
 logs/
 data/vector_store/
 data/processed/
+data/*.db
 
 # OS files
 .DS_Store
