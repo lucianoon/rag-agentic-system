@@ -4,6 +4,15 @@ Um sistema completo de **Retrieval-Augmented Generation (RAG) com comportamento 
 
 ## ✨ Funcionalidades
 
+- **Loop Agêntico com Tool Use**: o modelo decide quais ferramentas chamar
+  (`search_documents`, `get_task_history`), lê os resultados e itera até
+  responder — limitado por `agent.max_iterations`
+- **Dois cérebros intercambiáveis**: Claude (tool use nativo, via
+  `ANTHROPIC_API_KEY`) ou um modelo scripted determinístico que mantém o mesmo
+  loop rodando offline (CI, demos sem chave)
+- **Verificação de Groundedness**: a resposta final é conferida contra as
+  evidências que as ferramentas retornaram (`verification.min_confidence`);
+  respostas não confirmadas são sinalizadas
 - **Recuperação Multi-Fonte**: Ingestão de documentos do sistema de arquivos
 - **Embeddings Flexíveis**: Sentence-Transformers com fallback automático para TF-IDF
 - **Busca Vetorial**: Similaridade de cosseno em memória
@@ -249,10 +258,9 @@ context = ExecutionContext(
 )
 ```
 
-**Pipeline**: Executa o fluxo RAG
+**Pipeline**: Utilitários de recuperação e registro em memória
 1. Recupera documentos relevantes
-2. Gera resposta (simples ou via LLM)
-3. Registra na memória
+2. Registra logs de tarefas na memória
 
 ```python
 pipeline = Pipeline(context)
@@ -263,8 +271,22 @@ documents = pipeline.retrieve_documents("pergunta")
 response = pipeline.process("pergunta", "resposta", documents)
 ```
 
-#### 8. **agent.py** - Agente Principal
-O cérebro do sistema:
+#### 8. **agent.py + loop.py + tools.py + llm.py** - O Agente
+
+O coração do sistema é um loop de tool use: o modelo recebe a tarefa e as
+ferramentas disponíveis, decide o que chamar, lê os resultados e itera até
+produzir a resposta final (ou atingir `agent.max_iterations`). Depois, a
+resposta é verificada contra as evidências coletadas pelas ferramentas
+(`verification.min_confidence`) — respostas que se afastam dos documentos
+recuperados recebem um aviso explícito.
+
+Dois modelos implementam a mesma interface (`config.llm.provider`):
+
+- `anthropic` — Claude com tool use nativo (requer `ANTHROPIC_API_KEY`)
+- `scripted` — modelo determinístico offline: busca uma vez e responde
+  extrativamente; mantém loop, ferramentas, memória e verificação
+  genuinamente exercitados sem rede (é o que a CI roda)
+- `null`/`auto` (padrão) — Claude quando a chave existe, senão scripted
 
 ```python
 # Criar agente
@@ -276,8 +298,9 @@ response = agent.query("O que é IA?")
 
 # Acessar resposta
 print(response.answer)
-print(response.references)  # Documentos usados
-print(response.steps)  # Passos de raciocínio
+print(response.references)      # Documentos usados
+print(response.steps)           # Chamadas de ferramenta + resposta + verificação
+print(response.metadata)        # agent_mode, iterations, tool_calls, confidence
 ```
 
 **Fluxo de execução:**
@@ -458,11 +481,10 @@ Este projeto está licenciado sob a Licença MIT.
 ## 📚 Próximos Passos
 
 Melhorias planejadas:
-- Integração com LLMs (OpenAI, Anthropic)
-- Backend FAISS para vector store
-- Capacidades de web scraping
-- Sistemas de verificação avançados
-- Arquitetura de plugins
+- Backend FAISS/Qdrant para vector store com persistência
+- Novas ferramentas para o agente (leitura de documento completo, anotações)
+- Verificação via LLM-judge além da heurística lexical
+- Empacotamento com pyproject.toml e Dockerfile
 
 ## 🆘 Suporte
 
