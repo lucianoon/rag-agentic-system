@@ -1,6 +1,25 @@
 # Sistema RAG Agêntico 🤖
 
+> **In English:** a RAG system where retrieval is a *tool*, not a fixed pipeline stage.
+> A Claude tool-use loop decides when to call `search_documents`, refines the query and
+> searches again when the first results fall short, iterating under a bounded step cap.
+> The final answer is then scored for groundedness against the evidence the tools
+> actually returned. A scripted deterministic model keeps the whole loop runnable
+> offline, so CI exercises the real agent path without an API key. Full documentation
+> below is in Portuguese.
+>
+> **Different from [Enterprise RAG System](https://github.com/lucianoon/enterprise-rag-system):**
+> that repo retrieves once and optimizes *ranking quality* (hybrid BM25 + vector fusion,
+> Recall@K / MRR). This one optimizes *multi-step reasoning* — questions a single query
+> cannot answer.
+
 Um sistema completo de **Retrieval-Augmented Generation (RAG) com comportamento agêntico** para recuperação e processamento inteligente de informações.
+
+A diferença para o [Enterprise RAG System](https://github.com/lucianoon/enterprise-rag-system)
+está no **número de passos**: lá a recuperação acontece uma vez e o foco é a qualidade da
+lista ranqueada (fusão híbrida BM25 + vetorial, Recall@K / MRR). Aqui a recuperação é uma
+**ferramenta** que o modelo chama quantas vezes precisar, reformulando a consulta entre as
+chamadas — o foco é responder perguntas que uma única query não resolve.
 
 ## ✨ Funcionalidades
 
@@ -30,8 +49,8 @@ Um sistema completo de **Retrieval-Augmented Generation (RAG) com comportamento 
 
 ```bash
 # Clone o repositório
-git clone https://github.com/lucianoon/Rag-Agentic-System.git
-cd Rag-Agentic-System
+git clone https://github.com/lucianoon/rag-agentic-system.git
+cd rag-agentic-system
 
 # Instale as dependências
 pip install -r requirements.txt
@@ -101,6 +120,10 @@ rag-agentic-system/
 ├── src/rag_agent/             # Código principal da aplicação
 │   ├── __init__.py            # Inicialização do pacote
 │   ├── agent.py               # Agente RAG principal
+│   ├── loop.py                # Loop agêntico: turnos, tool use, verificação
+│   ├── tools.py               # Definição e execução das ferramentas
+│   ├── llm.py                 # Backends de modelo (Claude / scripted)
+│   ├── context.py             # Contexto de execução compartilhado
 │   ├── config.py              # Gerenciamento de configuração
 │   ├── embeddings.py          # Backends de embedding
 │   ├── memory.py              # Armazenamento de memória
@@ -490,4 +513,4 @@ Melhorias planejadas:
 
 Para problemas ou questões:
 - Email: lucianomevam@outlook.com
-- GitHub Issues: https://github.com/lucianoon/Rag-Agentic-System/issues
+- GitHub Issues: https://github.com/lucianoon/rag-agentic-system/issues
