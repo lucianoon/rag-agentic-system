@@ -2,6 +2,10 @@
 
 *[English version](README.en.md)*
 
+[![CI](https://github.com/lucianoon/rag-agentic-system/actions/workflows/ci.yml/badge.svg)](https://github.com/lucianoon/rag-agentic-system/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-green.svg)](LICENSE)
+
 Um sistema completo de **Retrieval-Augmented Generation (RAG) com comportamento agêntico** para recuperação e processamento inteligente de informações.
 
 A diferença para o [Enterprise RAG System](https://github.com/lucianoon/enterprise-rag-system)
