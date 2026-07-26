@@ -12,6 +12,27 @@ for entry in (str(PROJECT_ROOT), str(PROJECT_ROOT / "src")):
 
 from rag_agent.embeddings import EmbeddingBackend  # noqa: E402
 
+_LLM_ENV = (
+    "RAG_LLM_BASE_URL",
+    "RAG_LLM_API_KEY",
+    "RAG_LLM_MODEL",
+    "ANTHROPIC_API_KEY",
+    "ANTHROPIC_AUTH_TOKEN",
+    "OPENAI_API_KEY",
+    "OPENAI_BASE_URL",
+)
+
+
+@pytest.fixture(autouse=True)
+def offline_llm_env(monkeypatch):
+    """Keep backend selection out of the developer's environment.
+
+    Without this, a machine with ANTHROPIC_API_KEY or OPENAI_API_KEY exported
+    resolves a live backend and the suite stops matching what CI runs.
+    """
+    for name in _LLM_ENV:
+        monkeypatch.delenv(name, raising=False)
+
 
 @pytest.fixture
 def force_tfidf(monkeypatch):

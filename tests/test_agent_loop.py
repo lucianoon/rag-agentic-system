@@ -1,9 +1,17 @@
 """Tests for the agent loop, tools and model selection (no LLM, no network)."""
 
+import json
+
 import pytest
 
 from rag_agent import AgenticRAG
-from rag_agent.llm import ModelTurn, ScriptedModel, ToolCallRequest, build_agent_model
+from rag_agent.llm import (
+    ModelTurn,
+    OpenAICompatibleModel,
+    ScriptedModel,
+    ToolCallRequest,
+    build_agent_model,
+)
 from rag_agent.loop import AgentLoop, ITERATION_LIMIT_ANSWER, grounding_score
 from rag_agent.tools import ToolExecutor
 
@@ -131,11 +139,68 @@ def test_tool_executor_handles_unknown_tool_and_empty_history(tmp_path, force_tf
     assert references == []
 
 
-def test_build_agent_model_selection(monkeypatch):
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-
-    assert build_agent_model({}).mode == "scripted"  # auto without key
+def test_build_agent_model_selection():
+    assert build_agent_model({}).mode == "scripted"  # auto without any backend
     assert build_agent_model({"provider": "scripted"}).mode == "scripted"
 
     with pytest.raises(ValueError, match="llm.provider"):
-        build_agent_model({"provider": "openai"})
+        build_agent_model({"provider": "gemini"})
+
+
+def test_auto_falls_back_to_openai_when_only_base_url_is_set(monkeypatch):
+    """A local server needs no credential — a base URL alone must be enough."""
+    monkeypatch.setenv("RAG_LLM_BASE_URL", "http://localhost:11434/v1")
+    model = build_agent_model({"model": "llama3.1"})
+    assert model.mode == "openai"
+    assert model.model == "llama3.1"
+
+
+def test_openai_backend_translates_tools_to_function_schema():
+    from rag_agent.tools import TOOL_DEFINITIONS
+
+    translated = OpenAICompatibleModel._tools_to_openai(TOOL_DEFINITIONS)
+    assert [t["type"] for t in translated] == ["function", "function"]
+    first = translated[0]["function"]
+    assert first["name"] == "search_documents"
+    assert first["parameters"] == TOOL_DEFINITIONS[0]["input_schema"]
+
+
+def test_openai_backend_translates_anthropic_history():
+    """Anthropic packs tool results into a user turn; OpenAI wants tool turns."""
+    history = [
+        {"role": "user", "content": "What is X?"},
+        {
+            "role": "assistant",
+            "content": [
+                {"type": "text", "text": "Let me search."},
+                {
+                    "type": "tool_use",
+                    "id": "call_1",
+                    "name": "search_documents",
+                    "input": {"query": "X"},
+                },
+            ],
+        },
+        {
+            "role": "user",
+            "content": [
+                {"type": "tool_result", "tool_use_id": "call_1", "content": "X is a thing."}
+            ],
+        },
+    ]
+    out = OpenAICompatibleModel._messages_to_openai(history)
+
+    assert [m["role"] for m in out] == ["user", "assistant", "tool"]
+    assert out[1]["content"] == "Let me search."
+    assert out[1]["tool_calls"][0]["id"] == "call_1"
+    assert out[1]["tool_calls"][0]["function"]["name"] == "search_documents"
+    assert json.loads(out[1]["tool_calls"][0]["function"]["arguments"]) == {"query": "X"}
+    assert out[2]["tool_call_id"] == "call_1"
+    assert out[2]["content"] == "X is a thing."
+
+
+def test_openai_backend_omits_tool_calls_key_when_there_are_none():
+    out = OpenAICompatibleModel._messages_to_openai(
+        [{"role": "assistant", "content": [{"type": "text", "text": "Done."}]}]
+    )
+    assert out == [{"role": "assistant", "content": "Done."}]

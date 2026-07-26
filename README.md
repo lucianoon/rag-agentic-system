@@ -350,6 +350,35 @@ python main.py --task "sua pergunta aqui"
 python main.py --config meu_config.yaml
 ```
 
+### Trocando de modelo ou de provedor
+
+O loop do agente depende só do protocolo `AgentModel`, então três backends
+rodam a mesma máquina de loop:
+
+| `llm.provider` | Backend |
+|---|---|
+| `null` / `auto` (padrão) | Claude se houver chave; senão OpenAI-compatible se houver endpoint; senão o scripted |
+| `anthropic` | Claude com tool use nativo |
+| `openai` | Qualquer endpoint OpenAI-compatible — OpenAI, OpenRouter, Groq, Together, vLLM, Ollama, LM Studio |
+| `scripted` | Modelo determinístico offline (é o que a CI roda) |
+
+O backend OpenAI-compatible traduz nos dois sentidos: schemas de ferramenta e
+histórico de mensagens na ida, tool calls na volta — o loop continua falando
+nos formatos da Anthropic.
+
+```bash
+# OpenRouter, Groq, Together…
+export RAG_LLM_BASE_URL=https://openrouter.ai/api/v1
+export RAG_LLM_API_KEY=sk-or-v1-...
+export RAG_LLM_MODEL=meta-llama/llama-3.3-70b-instruct
+
+# Ollama local — sem credencial nenhuma
+export RAG_LLM_BASE_URL=http://localhost:11434/v1
+export RAG_LLM_MODEL=llama3.1
+```
+
+Esse backend exige `pip install openai`.
+
 ## ⚙️ Configuração Detalhada
 
 ### Embeddings

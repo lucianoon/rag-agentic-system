@@ -42,14 +42,23 @@ verification:
 agent:
   max_iterations: 6
   retry_attempts: 2
+  # Only the OpenAI-compatible backend uses this. Sampling parameters were
+  # removed on Claude Opus 4.7+ and a request carrying one is rejected.
   temperature: 0.2
   reasoning_steps: 3
 
 # LLM configuration for the agent loop
 llm:
-  # null/auto = Claude when ANTHROPIC_API_KEY is available, else the offline
-  # scripted model; "anthropic" = always Claude; "scripted" = always offline.
+  # null/auto = Claude when its key is available, else an OpenAI-compatible
+  # endpoint when one is configured, else the offline scripted model.
+  # "anthropic" = always Claude; "openai" = always OpenAI-compatible;
+  # "scripted" = always offline.
   provider: null
-  model: "claude-opus-4-8"
+  # Leave null to use each backend's own default (claude-opus-5 / gpt-4.1-mini).
+  model: null
   max_tokens: 1024
-  # Credentials come from the ANTHROPIC_API_KEY environment variable (or .env).
+  # Credentials come from the environment (or .env):
+  #   Anthropic          ANTHROPIC_API_KEY
+  #   OpenAI             OPENAI_API_KEY
+  #   OpenRouter/Groq/…  RAG_LLM_BASE_URL + RAG_LLM_API_KEY
+  #   Ollama/LM Studio   RAG_LLM_BASE_URL only (no credential needed)
