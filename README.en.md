@@ -2,6 +2,10 @@
 
 *[Versão em português](README.md)*
 
+[![CI](https://github.com/lucianoon/rag-agentic-system/actions/workflows/ci.yml/badge.svg)](https://github.com/lucianoon/rag-agentic-system/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 A **Retrieval-Augmented Generation (RAG)** system where retrieval is a *tool*,
 not a fixed pipeline stage. A Claude tool-use loop decides when to search,
 refines the query and searches again when the first results fall short, and
