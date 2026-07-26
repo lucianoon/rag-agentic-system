@@ -1,276 +1,268 @@
-# Sistema RAG Agêntico 🤖
+# Agentic RAG System 🤖
 
-> **In English:** a RAG system where retrieval is a *tool*, not a fixed pipeline stage.
-> A Claude tool-use loop decides when to call `search_documents`, refines the query and
-> searches again when the first results fall short, iterating under a bounded step cap.
-> The final answer is then scored for groundedness against the evidence the tools
-> actually returned. A scripted deterministic model keeps the whole loop runnable
-> offline, so CI exercises the real agent path without an API key. Full documentation
-> below is in Portuguese.
->
+*[Versão em português](README.pt-BR.md)*
+
+A **Retrieval-Augmented Generation (RAG)** system where retrieval is a *tool*,
+not a fixed pipeline stage. A Claude tool-use loop decides when to search,
+refines the query and searches again when the first results fall short, and
+iterates under a bounded step cap. The final answer is then scored for
+groundedness against the evidence the tools actually returned.
+
 > **Different from [Enterprise RAG System](https://github.com/lucianoon/enterprise-rag-system):**
-> that repo retrieves once and optimizes *ranking quality* (hybrid BM25 + vector fusion,
-> Recall@K / MRR). This one optimizes *multi-step reasoning* — questions a single query
-> cannot answer.
+> that repo retrieves once and optimizes *ranking quality* (hybrid BM25 + vector
+> fusion, Recall@K / MRR). This one optimizes *multi-step reasoning* — questions
+> a single query cannot answer.
 
-Um sistema completo de **Retrieval-Augmented Generation (RAG) com comportamento agêntico** para recuperação e processamento inteligente de informações.
+## ✨ Features
 
-A diferença para o [Enterprise RAG System](https://github.com/lucianoon/enterprise-rag-system)
-está no **número de passos**: lá a recuperação acontece uma vez e o foco é a qualidade da
-lista ranqueada (fusão híbrida BM25 + vetorial, Recall@K / MRR). Aqui a recuperação é uma
-**ferramenta** que o modelo chama quantas vezes precisar, reformulando a consulta entre as
-chamadas — o foco é responder perguntas que uma única query não resolve.
+- **Agentic loop with tool use**: the model chooses which tools to call
+  (`search_documents`, `get_task_history`), reads the results and iterates until
+  it can answer — bounded by `agent.max_iterations`
+- **Two interchangeable brains**: Claude (native tool use, via
+  `ANTHROPIC_API_KEY`) or a deterministic scripted model that keeps the same
+  loop running offline (CI, demos without a key)
+- **Groundedness verification**: the final answer is checked against the
+  evidence the tools returned (`verification.min_confidence`); unconfirmed
+  answers are flagged
+- **Multi-source retrieval**: document ingestion from the filesystem
+- **Flexible embeddings**: Sentence-Transformers with automatic TF-IDF fallback
+- **Vector search**: in-memory cosine similarity
+- **Task memory**: SQLite storage for task history
+- **Interactive CLI**: a friendly command-line interface
+- **Configurable pipeline**: YAML-based configuration
 
-## ✨ Funcionalidades
+## 🚀 Installation
 
-- **Loop Agêntico com Tool Use**: o modelo decide quais ferramentas chamar
-  (`search_documents`, `get_task_history`), lê os resultados e itera até
-  responder — limitado por `agent.max_iterations`
-- **Dois cérebros intercambiáveis**: Claude (tool use nativo, via
-  `ANTHROPIC_API_KEY`) ou um modelo scripted determinístico que mantém o mesmo
-  loop rodando offline (CI, demos sem chave)
-- **Verificação de Groundedness**: a resposta final é conferida contra as
-  evidências que as ferramentas retornaram (`verification.min_confidence`);
-  respostas não confirmadas são sinalizadas
-- **Recuperação Multi-Fonte**: Ingestão de documentos do sistema de arquivos
-- **Embeddings Flexíveis**: Sentence-Transformers com fallback automático para TF-IDF
-- **Busca Vetorial**: Similaridade de cosseno em memória
-- **Memória de Tarefas**: Armazenamento SQLite para histórico de tarefas
-- **CLI Interativa**: Interface de linha de comando amigável
-- **Pipeline Configurável**: Configuração baseada em YAML
-
-## 🚀 Instalação
-
-### Pré-requisitos
-- Python 3.8 ou superior
+### Prerequisites
+- Python 3.8 or newer
 - Git
 
-### Início Rápido
+### Quick start
 
 ```bash
-# Clone o repositório
+# Clone the repository
 git clone https://github.com/lucianoon/rag-agentic-system.git
 cd rag-agentic-system
 
-# Instale as dependências
+# Install the dependencies
 pip install -r requirements.txt
 
-# Execute o sistema
+# Run the system
 python main.py
 ```
 
-## 📖 Como Usar
+## 📖 How to use
 
-### Modo Interativo (Padrão)
+### Interactive mode (default)
 
 ```bash
 python main.py
 ```
 
-Isso inicia o agente RAG interativo:
+This starts the interactive RAG agent:
 
 ```
 🤖 RAG Agentic System - Interactive Mode
 Type 'help' for commands, 'quit' to exit
 
-RAG> O que é machine learning?
-🔍 Processing: O que é machine learning?
+RAG> What is machine learning?
+🔍 Processing: What is machine learning?
 
 📄 Response:
-Baseado nos documentos recuperados...
+Based on the retrieved documents...
 ```
 
-### Modo de Tarefa Única
+### Single-task mode
 
 ```bash
-python main.py --task "Explique computação quântica"
+python main.py --task "Explain quantum computing"
 ```
 
-### Adicionando Documentos
+### Adding documents
 
-1. Coloque seus arquivos `.txt` ou `.md` no diretório `data/processed/`
-2. Execute o sistema - ele irá indexá-los automaticamente na inicialização
+1. Put your `.txt` or `.md` files in the `data/processed/` directory
+2. Run the system — it indexes them automatically at startup
 
-### Configuração
+### Configuration
 
-Edite `config/default.yaml` para personalizar:
-- Modelos de embedding
-- Configurações do vector store
-- Parâmetros de recuperação
-- Configurações de memória
+Edit `config/default.yaml` to customize:
+- Embedding models
+- Vector store settings
+- Retrieval parameters
+- Memory settings
 
-### Comandos Disponíveis
+### Available commands
 
-No modo interativo:
-- `<pergunta>` - Faça uma pergunta
-- `stats` - Exibe estatísticas do sistema
-- `history` - Mostra histórico de tarefas recentes
-- `clear` - Limpa o vector store
-- `quit`/`exit`/`q` - Sai do sistema
+In interactive mode:
+- `<question>` — ask a question
+- `stats` — show system statistics
+- `history` — show recent task history
+- `clear` — clear the vector store
+- `quit`/`exit`/`q` — exit
 
-## 📁 Estrutura do Projeto
+## 📁 Project structure
 
 ```
 rag-agentic-system/
-├── main.py                     # Ponto de entrada CLI
-├── requirements.txt            # Dependências
-├── README.md                   # Este arquivo
+├── main.py                     # CLI entry point
+├── requirements.txt            # Dependencies
+├── README.md                   # This file
 ├── config/
-│   └── default.yaml           # Arquivo de configuração
-├── src/rag_agent/             # Código principal da aplicação
-│   ├── __init__.py            # Inicialização do pacote
-│   ├── agent.py               # Agente RAG principal
-│   ├── loop.py                # Loop agêntico: turnos, tool use, verificação
-│   ├── tools.py               # Definição e execução das ferramentas
-│   ├── llm.py                 # Backends de modelo (Claude / scripted)
-│   ├── context.py             # Contexto de execução compartilhado
-│   ├── config.py              # Gerenciamento de configuração
-│   ├── embeddings.py          # Backends de embedding
-│   ├── memory.py              # Armazenamento de memória
-│   ├── pipeline.py            # Orquestração do pipeline
-│   ├── retrieval.py           # Recuperação de documentos
-│   ├── types.py               # Modelos de dados
-│   └── vector_store.py        # Armazenamento vetorial
+│   └── default.yaml            # Configuration file
+├── src/rag_agent/              # Main application code
+│   ├── __init__.py             # Package initialization
+│   ├── agent.py                # Main RAG agent
+│   ├── loop.py                 # Agentic loop: turns, tool use, verification
+│   ├── tools.py                # Tool definitions and execution
+│   ├── llm.py                  # Model backends (Claude / scripted)
+│   ├── context.py              # Shared execution context
+│   ├── config.py               # Configuration management
+│   ├── embeddings.py           # Embedding backends
+│   ├── memory.py               # Memory storage
+│   ├── pipeline.py             # Pipeline orchestration
+│   ├── retrieval.py            # Document retrieval
+│   ├── types.py                # Data models
+│   └── vector_store.py         # Vector storage
 └── data/
-    └── processed/             # Coloque documentos aqui
+    └── processed/              # Put documents here
 ```
 
-## 🔧 Explicação do Código
+## 🔧 Code walkthrough
 
-### Arquitetura do Sistema
+### System architecture
 
-O sistema é organizado em módulos independentes que trabalham juntos:
+The system is organized into independent modules that work together:
 
-#### 1. **types.py** - Modelos de Dados
-Define as estruturas de dados fundamentais:
-- `Document`: Representa um documento com conteúdo e metadados
-- `RetrievalResult`: Resultado de uma busca vetorial (documento + score)
-- `TaskLog`: Registra o histórico de execução de uma tarefa
-- `AgentResponse`: Resposta final retornada ao usuário
+#### 1. **types.py** — data models
+Defines the fundamental data structures:
+- `Document`: a document with content and metadata
+- `RetrievalResult`: the result of a vector search (document + score)
+- `TaskLog`: the execution history of a task
+- `AgentResponse`: the final response returned to the user
 
 ```python
-# Exemplo: Criando um documento
+# Example: creating a document
 doc = Document(
     id="doc1",
-    content="Conteúdo do documento",
-    metadata={"source": "arquivo.txt"}
+    content="Document content",
+    metadata={"source": "file.txt"}
 )
 ```
 
-#### 2. **config.py** - Gerenciamento de Configuração
-Carrega e gerencia configurações do sistema via YAML:
-- `EmbeddingConfig`: Configurações de embeddings
-- `VectorStoreConfig`: Configurações do armazenamento vetorial
-- `RetrievalConfig`: Parâmetros de recuperação de documentos
-- `MemoryConfig`: Configurações de memória
-- `AgentConfig`: Parâmetros do agente
+#### 2. **config.py** — configuration management
+Loads and manages system configuration from YAML:
+- `EmbeddingConfig`: embedding settings
+- `VectorStoreConfig`: vector storage settings
+- `RetrievalConfig`: document retrieval parameters
+- `MemoryConfig`: memory settings
+- `AgentConfig`: agent parameters
 
 ```python
-# Carregar configuração
-config = load_config()  # Carrega config/default.yaml
+# Load configuration
+config = load_config()  # Loads config/default.yaml
 ```
 
-#### 3. **embeddings.py** - Backend de Embeddings
-Converte texto em vetores numéricos:
-- Suporta Sentence-Transformers (melhor qualidade)
-- Fallback automático para TF-IDF (não precisa GPU)
-- Normalização automática de vetores
+#### 3. **embeddings.py** — embedding backend
+Turns text into numeric vectors:
+- Supports Sentence-Transformers (better quality)
+- Automatic fallback to TF-IDF (no GPU needed)
+- Automatic vector normalization
 
 ```python
-# Criar backend de embeddings
+# Create the embedding backend
 embeddings = EmbeddingBackend(config=config.embeddings)
 
-# Converter texto em vetor
-vector = embeddings.embed_single("texto de exemplo")
+# Turn text into a vector
+vector = embeddings.embed_single("example text")
 ```
 
-**Como funciona:**
-1. Tenta usar Sentence-Transformers (modelos neurais)
-2. Se não disponível, usa TF-IDF (baseado em estatísticas)
-3. Retorna vetores normalizados para busca de similaridade
+**How it works:**
+1. Tries Sentence-Transformers (neural models)
+2. Falls back to TF-IDF (statistics-based) if unavailable
+3. Returns normalized vectors for similarity search
 
-#### 4. **vector_store.py** - Armazenamento Vetorial
-Armazena e busca documentos por similaridade:
-- Armazenamento em memória (dicionário Python)
-- Busca por similaridade de cosseno
-- Operações: add, search, delete, clear
+#### 4. **vector_store.py** — vector storage
+Stores and searches documents by similarity:
+- In-memory storage (a Python dictionary)
+- Cosine similarity search
+- Operations: add, search, delete, clear
 
 ```python
-# Criar vector store
+# Create the vector store
 vector_store = VectorStore(config=config.vector_store)
 
-# Adicionar documentos
-vector_store.add([(documento, vetor)])
+# Add documents
+vector_store.add([(document, vector)])
 
-# Buscar documentos similares
+# Search for similar documents
 results = vector_store.search(query_vector, top_k=5)
 ```
 
-**Como funciona a busca:**
-1. Recebe um vetor de consulta
-2. Calcula similaridade de cosseno com todos os vetores armazenados
-3. Retorna os top_k documentos mais similares
+**How the search works:**
+1. Receives a query vector
+2. Computes cosine similarity against every stored vector
+3. Returns the top_k most similar documents
 
-#### 5. **retrieval.py** - Recuperação de Documentos
-Carrega documentos do disco e os prepara para indexação:
+#### 5. **retrieval.py** — document retrieval
+Loads documents from disk and prepares them for indexing:
 
-**DocumentIngestor**: Carrega arquivos do disco
-- Varre diretórios recursivamente
-- Filtra por extensões (.txt, .md)
-- Divide textos longos em chunks
+**DocumentIngestor**: loads files from disk
+- Scans directories recursively
+- Filters by extension (.txt, .md)
+- Splits long texts into chunks
 
 ```python
-# Criar ingestor
+# Create the ingestor
 ingestor = DocumentIngestor(config=config.retrieval)
 
-# Carregar documentos em chunks
+# Load documents as chunks
 chunks = ingestor.load_chunks()
 ```
 
-**FileSystemRetriever**: Combina ingestão + embeddings + busca
+**FileSystemRetriever**: combines ingestion + embeddings + search
 ```python
-# Criar retriever
+# Create the retriever
 retriever = FileSystemRetriever(
     config=config.retrieval,
     embeddings=embeddings,
     vector_store=vector_store
 )
 
-# Ingerir documentos
+# Ingest documents
 retriever.ingest()
 
-# Buscar por query
-results = retriever.search("minha pergunta")
+# Search by query
+results = retriever.search("my question")
 ```
 
-**Chunking de Texto:**
-- Divide documentos em pedaços menores (chunks)
-- Usa `chunk_size` palavras por chunk
-- Mantém `chunk_overlap` palavras entre chunks para preservar contexto
+**Text chunking:**
+- Splits documents into smaller pieces (chunks)
+- Uses `chunk_size` words per chunk
+- Keeps `chunk_overlap` words between chunks to preserve context
 
-#### 6. **memory.py** - Armazenamento de Memória
-Salva histórico de tarefas em SQLite:
-- Armazena queries e respostas
-- Registra passos de raciocínio
-- Permite consultar histórico
-- Limpeza automática de dados antigos
+#### 6. **memory.py** — memory storage
+Saves task history in SQLite:
+- Stores queries and answers
+- Records reasoning steps
+- Allows querying the history
+- Automatic cleanup of old data
 
 ```python
-# Criar memória
+# Create memory
 memory = MemoryStore(config=config.memory)
 
-# Salvar uma tarefa
-log = TaskLog(task_id="task1", query="pergunta")
+# Save a task
+log = TaskLog(task_id="task1", query="question")
 memory.store(log)
 
-# Consultar histórico recente
+# Query recent history
 recent_tasks = memory.recent(limit=10)
 ```
 
-#### 7. **pipeline.py** - Orquestração do Pipeline
-Coordena o fluxo de execução:
+#### 7. **pipeline.py** — pipeline orchestration
+Coordinates the execution flow:
 
-**ExecutionContext**: Agrupa todas as dependências
+**ExecutionContext**: bundles every dependency
 ```python
 context = ExecutionContext(
     config=config,
@@ -281,236 +273,250 @@ context = ExecutionContext(
 )
 ```
 
-**Pipeline**: Utilitários de recuperação e registro em memória
-1. Recupera documentos relevantes
-2. Registra logs de tarefas na memória
+**Pipeline**: retrieval and memory-logging utilities
+1. Retrieves relevant documents
+2. Records task logs in memory
 
 ```python
 pipeline = Pipeline(context)
-pipeline.initialize()  # Prepara recursos
+pipeline.initialize()  # Prepares resources
 
-# Processar query
-documents = pipeline.retrieve_documents("pergunta")
-response = pipeline.process("pergunta", "resposta", documents)
+# Process a query
+documents = pipeline.retrieve_documents("question")
+response = pipeline.process("question", "answer", documents)
 ```
 
-#### 8. **agent.py + loop.py + tools.py + llm.py** - O Agente
+#### 8. **agent.py + loop.py + tools.py + llm.py** — the agent
 
-O coração do sistema é um loop de tool use: o modelo recebe a tarefa e as
-ferramentas disponíveis, decide o que chamar, lê os resultados e itera até
-produzir a resposta final (ou atingir `agent.max_iterations`). Depois, a
-resposta é verificada contra as evidências coletadas pelas ferramentas
-(`verification.min_confidence`) — respostas que se afastam dos documentos
-recuperados recebem um aviso explícito.
+The heart of the system is a tool-use loop: the model receives the task and the
+available tools, decides what to call, reads the results and iterates until it
+produces a final answer (or hits `agent.max_iterations`). The answer is then
+verified against the evidence the tools collected
+(`verification.min_confidence`) — answers that drift from the retrieved
+documents get an explicit warning.
 
-Dois modelos implementam a mesma interface (`config.llm.provider`):
+Two models implement the same interface (`config.llm.provider`):
 
-- `anthropic` — Claude com tool use nativo (requer `ANTHROPIC_API_KEY`)
-- `scripted` — modelo determinístico offline: busca uma vez e responde
-  extrativamente; mantém loop, ferramentas, memória e verificação
-  genuinamente exercitados sem rede (é o que a CI roda)
-- `null`/`auto` (padrão) — Claude quando a chave existe, senão scripted
+- `anthropic` — Claude with native tool use (requires `ANTHROPIC_API_KEY`)
+- `scripted` — a deterministic offline model: searches once and answers
+  extractively, while keeping the loop, tools, memory and verification
+  genuinely exercised without network access (this is what CI runs)
+- `null`/`auto` (default) — Claude when the key exists, otherwise scripted
 
 ```python
-# Criar agente
+# Create the agent
 agent = AgenticRAG(context)
 agent.initialize()
 
-# Fazer pergunta
-response = agent.query("O que é IA?")
+# Ask a question
+response = agent.query("What is AI?")
 
-# Acessar resposta
+# Access the response
 print(response.answer)
-print(response.references)      # Documentos usados
-print(response.steps)           # Chamadas de ferramenta + resposta + verificação
+print(response.references)      # Documents used
+print(response.steps)           # Tool calls + answer + verification
 print(response.metadata)        # agent_mode, iterations, tool_calls, confidence
 ```
 
-**Fluxo de execução:**
-1. Recebe query do usuário
-2. Busca documentos relevantes (retrieval)
-3. Gera resposta baseada nos documentos
-4. Salva na memória para histórico
-5. Retorna resposta estruturada
+**Execution flow:**
+1. Receives the user's query
+2. Sends it to the model along with the tool definitions
+3. The model calls `search_documents` (possibly several times, refining the
+   query between calls) and reads the results
+4. Steps 2–3 repeat until the model answers or `agent.max_iterations` is reached
+5. The answer is scored for groundedness against the accumulated evidence and
+   flagged if it drifts
+6. Answer and metadata are saved to memory
+7. A structured response is returned
 
-#### 9. **main.py** - Interface CLI
-Ponto de entrada do sistema:
+#### 9. **main.py** — CLI interface
+The system's entry point:
 
-**Modo Interativo:**
-- Loop de perguntas e respostas
-- Comandos: stats, history, clear, quit
-- Exibe respostas formatadas
+**Interactive mode:**
+- A question-and-answer loop
+- Commands: stats, history, clear, quit
+- Displays formatted answers
 
-**Modo de Tarefa Única:**
-- Executa uma pergunta e sai
-- Útil para scripts
+**Single-task mode:**
+- Runs one question and exits
+- Useful for scripting
 
 ```bash
-# Interativo
+# Interactive
 python main.py
 
-# Tarefa única
-python main.py --task "sua pergunta aqui"
+# Single task
+python main.py --task "your question here"
 
-# Com configuração customizada
-python main.py --config meu_config.yaml
+# With a custom configuration
+python main.py --config my_config.yaml
 ```
 
-## ⚙️ Configuração Detalhada
+## ⚙️ Detailed configuration
 
 ### Embeddings
 ```yaml
 embeddings:
   model_name: "sentence-transformers/all-MiniLM-L6-v2"
-  device: null  # null = auto, "cpu" ou "cuda"
-  use_tfidf_fallback: true  # Usar TF-IDF se transformers indisponível
-  vector_dimension: 384  # Dimensão dos vetores
+  device: null  # null = auto, "cpu" or "cuda"
+  use_tfidf_fallback: true  # Use TF-IDF if transformers is unavailable
+  vector_dimension: 384  # Vector dimension
 ```
 
-### Vector Store
+### Vector store
 ```yaml
 vector_store:
-  backend: "simple"  # Atualmente apenas "simple" suportado
-  embedding_dimension: 384  # Deve coincidir com embeddings
-  similarity_metric: "cosine"  # Métrica de similaridade
-  top_k: 5  # Número de documentos a recuperar
+  backend: "simple"  # Currently only "simple" is supported
+  embedding_dimension: 384  # Must match the embeddings
+  similarity_metric: "cosine"  # Similarity metric
+  top_k: 5  # Number of documents to retrieve
 ```
 
 ### Retrieval
 ```yaml
 retrieval:
   sources:
-    - "data/processed"  # Diretórios para escanear
+    - "data/processed"  # Directories to scan
   file_extensions:
-    - ".txt"  # Extensões de arquivo permitidas
+    - ".txt"  # Allowed file extensions
     - ".md"
-  chunk_size: 512  # Máximo de palavras por chunk
-  chunk_overlap: 64  # Palavras de sobreposição entre chunks
+  chunk_size: 512  # Maximum words per chunk
+  chunk_overlap: 64  # Overlapping words between chunks
 ```
 
-### Memória
+### Memory
 ```yaml
 memory:
-  enabled: true  # Ativar/desativar memória
-  database_path: "data/memory.db"  # Caminho do banco SQLite
-  cleanup_days: 30  # Deletar logs mais antigos que X dias
-  importance_threshold: 0.3  # Limiar para salvar tarefas
+  enabled: true  # Enable/disable memory
+  database_path: "data/memory.db"  # SQLite database path
+  cleanup_days: 30  # Delete logs older than X days
+  importance_threshold: 0.3  # Threshold for storing tasks
 ```
 
-## 🔄 Fluxo de Dados
+## 🔄 Data flow
 
 ```
-1. Usuário faz pergunta
+1. User asks a question
    ↓
-2. Query é convertida em vetor (embedding)
+2. The question and the tool definitions go to the model
    ↓
-3. Vector store busca documentos similares
+3. The model decides to call search_documents
    ↓
-4. Documentos são recuperados
+4. The query is embedded and the vector store returns the nearest chunks
    ↓
-5. Resposta é gerada baseada nos documentos
+5. The model reads the results and either refines the query and searches
+   again (back to step 3) or writes its answer
    ↓
-6. Resposta + metadados salvos na memória
+6. The answer is scored for groundedness against everything the tools returned
    ↓
-7. Resposta exibida ao usuário
+7. Answer + metadata are saved to memory
+   ↓
+8. The answer is shown to the user, flagged if groundedness is below threshold
 ```
 
-## 🧪 Desenvolvimento
+Steps 3–5 are the loop: how many times they run is the model's decision,
+bounded by `agent.max_iterations`.
 
-### Testando o Sistema
+## 🧪 Development
 
-O projeto possui uma suíte de testes em `tests/` cobrindo chunking e ingestão de documentos, busca vetorial por similaridade de cosseno, fallback de embeddings para TF-IDF, memória de tarefas em SQLite, carregamento de configuração YAML e o fluxo completo do agente.
+### Testing the system
 
-Os testes **não** precisam de LLM, chaves de API nem acesso à rede: o caminho de fallback TF-IDF é forçado, então nenhum modelo do sentence-transformers é baixado.
+The project has a test suite in `tests/` covering document chunking and
+ingestion, cosine-similarity vector search, the TF-IDF embedding fallback,
+SQLite task memory, YAML configuration loading and the full agent flow.
+
+The tests need **no** LLM, API key or network access: the TF-IDF fallback path
+is forced, so no sentence-transformers model is downloaded.
 
 ```bash
-# Instalar dependências mínimas para os testes
+# Install the minimum dependencies for the tests
 pip install numpy scikit-learn pyyaml pytest
 
-# Executar a suíte completa
+# Run the full suite
 pytest
 
-# Executar um módulo específico
+# Run a specific module
 pytest tests/test_vector_store.py -v
 
-# Formatar código
+# Format the code
 black src/ tests/
 
-# Verificar qualidade do código
+# Check code quality
 flake8 src/ tests/
 ```
 
-A mesma suíte é executada automaticamente no CI (GitHub Actions) a cada push e pull request na branch `main` — veja `.github/workflows/ci.yml`.
+The same suite runs automatically in CI (GitHub Actions) on every push and pull
+request to `main` — see `.github/workflows/ci.yml`.
 
-### Adicionando Novos Retrievers
+### Adding new retrievers
 
 ```python
 from src.rag_agent.retrieval import DocumentIngestor
 
-class MeuRetriever:
+class MyRetriever:
     def load_documents(self):
-        # Sua lógica aqui
+        # Your logic here
         pass
 ```
 
-## 📊 Exemplos de Uso
+## 📊 Usage examples
 
-### Exemplo 1: Perguntas e Respostas Simples
+### Example 1: simple question answering
 
 ```python
 from src.rag_agent import AgenticRAG, load_config, create_context
 
-# Configurar
+# Set up
 config = load_config()
 context = create_context(config)
 agent = AgenticRAG(context)
 agent.initialize()
 
-# Perguntar
-response = agent.query("O que é Python?")
+# Ask
+response = agent.query("What is Python?")
 print(response.answer)
 ```
 
-### Exemplo 2: Adicionar Documentos Manualmente
+### Example 2: adding documents manually
 
 ```python
-# Adicionar documentos
+# Add documents
 agent.add_documents(["doc1.txt", "doc2.txt"])
 
-# Buscar
-response = agent.query("Busca nos documentos adicionados")
+# Search
+response = agent.query("Search the added documents")
 ```
 
-### Exemplo 3: Ver Estatísticas
+### Example 3: viewing statistics
 
 ```python
 stats = agent.get_stats()
-print(f"Documentos: {stats['total_documents']}")
+print(f"Documents: {stats['total_documents']}")
 print(f"Embeddings: {stats['embeddings_stored']}")
 ```
 
-## 🤝 Contribuindo
+## 🤝 Contributing
 
-1. Fork o repositório
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
-3. Commit suas mudanças (`git commit -m 'Adiciona nova feature'`)
-4. Push para a branch (`git push origin feature/nova-feature`)
-5. Abra um Pull Request
+1. Fork the repository
+2. Create a branch for your feature (`git checkout -b feature/new-feature`)
+3. Commit your changes (`git commit -m 'Add new feature'`)
+4. Push to the branch (`git push origin feature/new-feature`)
+5. Open a Pull Request
 
-## 📄 Licença
+## 📄 License
 
-Este projeto está licenciado sob a Licença MIT.
+This project is licensed under the MIT License.
 
-## 📚 Próximos Passos
+## 📚 Next steps
 
-Melhorias planejadas:
-- Backend FAISS/Qdrant para vector store com persistência
-- Novas ferramentas para o agente (leitura de documento completo, anotações)
-- Verificação via LLM-judge além da heurística lexical
-- Empacotamento com pyproject.toml e Dockerfile
+Planned improvements:
+- FAISS/Qdrant backend for a persistent vector store
+- New tools for the agent (full document read, note taking)
+- LLM-judge verification on top of the lexical heuristic
+- Packaging with pyproject.toml and a Dockerfile
 
-## 🆘 Suporte
+## 🆘 Support
 
-Para problemas ou questões:
+For problems or questions:
 - Email: lucianomevam@outlook.com
 - GitHub Issues: https://github.com/lucianoon/rag-agentic-system/issues
