@@ -1,5 +1,6 @@
 """Tests for the agent loop, tools and model selection (no LLM, no network)."""
 
+import importlib.util
 import json
 
 import pytest
@@ -147,6 +148,10 @@ def test_build_agent_model_selection():
         build_agent_model({"provider": "gemini"})
 
 
+@pytest.mark.skipif(
+    importlib.util.find_spec("openai") is None,
+    reason="backend selection requires the optional openai SDK",
+)
 def test_auto_falls_back_to_openai_when_only_base_url_is_set(monkeypatch):
     """A local server needs no credential — a base URL alone must be enough."""
     monkeypatch.setenv("RAG_LLM_BASE_URL", "http://localhost:11434/v1")
