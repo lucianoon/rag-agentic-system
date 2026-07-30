@@ -7,7 +7,6 @@ from rag_agent.embeddings import EmbeddingBackend
 from rag_agent.retrieval import DocumentIngestor, FileSystemRetriever, chunk_text
 from rag_agent.vector_store import VectorStore
 
-
 # --- chunk_text -----------------------------------------------------------
 
 
@@ -110,7 +109,9 @@ def test_ingestor_load_chunks_sets_chunk_metadata(tmp_path):
 
 
 def make_retriever(tmp_path):
-    embeddings = EmbeddingBackend(config=EmbeddingConfig(use_tfidf_fallback=True, vector_dimension=8))
+    embeddings = EmbeddingBackend(
+        config=EmbeddingConfig(use_tfidf_fallback=True, vector_dimension=8)
+    )
     vector_store = VectorStore(config=VectorStoreConfig(embedding_dimension=8, top_k=3))
     # chunk_size large enough that each test file stays a single chunk.
     config = make_retrieval_config(tmp_path, chunk_size=64)

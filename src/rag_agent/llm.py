@@ -19,7 +19,7 @@ import json
 import logging
 import os
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Protocol
+from typing import Any, Protocol, cast
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class ToolCallRequest:
 
     id: str
     name: str
-    input: Dict[str, Any]
+    input: dict[str, Any]
 
 
 @dataclass(slots=True)
@@ -56,8 +56,8 @@ class ModelTurn:
     """
 
     text: str = ""
-    tool_calls: List[ToolCallRequest] = field(default_factory=list)
-    raw_content: List[Dict[str, Any]] = field(default_factory=list)
+    tool_calls: list[ToolCallRequest] = field(default_factory=list)
+    raw_content: list[dict[str, Any]] = field(default_factory=list)
 
 
 class AgentModel(Protocol):
@@ -68,8 +68,8 @@ class AgentModel(Protocol):
     def create_turn(
         self,
         system: str,
-        messages: List[Dict[str, Any]],
-        tools: List[Dict[str, Any]],
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]],
     ) -> ModelTurn:
         ...
 
@@ -88,8 +88,8 @@ class ScriptedModel:
     def create_turn(
         self,
         system: str,
-        messages: List[Dict[str, Any]],
-        tools: List[Dict[str, Any]],
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]],
     ) -> ModelTurn:
         tool_result = self._last_tool_result(messages)
         if tool_result is None:
@@ -112,14 +112,14 @@ class ScriptedModel:
         return ModelTurn(text=f"Based on the retrieved documents:\n\n{tool_result}")
 
     @staticmethod
-    def _last_user_text(messages: List[Dict[str, Any]]) -> str:
+    def _last_user_text(messages: list[dict[str, Any]]) -> str:
         for message in reversed(messages):
             if message.get("role") == "user" and isinstance(message.get("content"), str):
                 return message["content"]
         return ""
 
     @staticmethod
-    def _last_tool_result(messages: List[Dict[str, Any]]) -> str | None:
+    def _last_tool_result(messages: list[dict[str, Any]]) -> str | None:
         for message in reversed(messages):
             content = message.get("content")
             if message.get("role") == "user" and isinstance(content, list):
@@ -153,19 +153,22 @@ class ClaudeModel:
     def create_turn(
         self,
         system: str,
-        messages: List[Dict[str, Any]],
-        tools: List[Dict[str, Any]],
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]],
     ) -> ModelTurn:
+        # A interface é neutra de provedor (dicts simples, compartilhados com o
+        # backend OpenAI-compatible), então os TypedDicts do SDK da Anthropic
+        # entram apenas na fronteira da chamada.
         response = self._client.messages.create(
             model=self.model,
             max_tokens=self.max_tokens,
             system=system,
-            messages=messages,
-            tools=tools,
+            messages=cast(Any, messages),
+            tools=cast(Any, tools),
         )
-        text_parts: List[str] = []
-        tool_calls: List[ToolCallRequest] = []
-        raw_content: List[Dict[str, Any]] = []
+        text_parts: list[str] = []
+        tool_calls: list[ToolCallRequest] = []
+        raw_content: list[dict[str, Any]] = []
         for block in response.content:
             if block.type == "text":
                 text_parts.append(block.text)
@@ -175,7 +178,11 @@ class ClaudeModel:
                 raw_content.append(
                     {"type": "tool_use", "id": block.id, "name": block.name, "input": block.input}
                 )
-        return ModelTurn(text="".join(text_parts).strip(), tool_calls=tool_calls, raw_content=raw_content)
+        return ModelTurn(
+            text="".join(text_parts).strip(),
+            tool_calls=tool_calls,
+            raw_content=raw_content,
+        )
 
 
 class OpenAICompatibleModel:
@@ -211,7 +218,7 @@ class OpenAICompatibleModel:
         self._client = openai.OpenAI(api_key=api_key, base_url=base_url)
 
     @staticmethod
-    def _tools_to_openai(tools: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _tools_to_openai(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return [
             {
                 "type": "function",
@@ -225,14 +232,14 @@ class OpenAICompatibleModel:
         ]
 
     @staticmethod
-    def _messages_to_openai(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _messages_to_openai(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Translate the loop's Anthropic-shaped history to OpenAI shapes.
 
         Anthropic packs tool results into a ``user`` turn as content blocks;
         OpenAI wants one ``tool`` message per result. An assistant turn carries
         its calls in ``tool_calls`` rather than as ``tool_use`` blocks.
         """
-        out: List[Dict[str, Any]] = []
+        out: list[dict[str, Any]] = []
         for message in messages:
             role, content = message["role"], message["content"]
             if isinstance(content, str):
@@ -252,7 +259,7 @@ class OpenAICompatibleModel:
                     for b in content
                     if b.get("type") == "tool_use"
                 ]
-                entry: Dict[str, Any] = {"role": "assistant", "content": text or None}
+                entry: dict[str, Any] = {"role": "assistant", "content": text or None}
                 if calls:
                     entry["tool_calls"] = calls
                 out.append(entry)
@@ -271,10 +278,10 @@ class OpenAICompatibleModel:
     def create_turn(
         self,
         system: str,
-        messages: List[Dict[str, Any]],
-        tools: List[Dict[str, Any]],
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]],
     ) -> ModelTurn:
-        payload: Dict[str, Any] = {
+        payload: dict[str, Any] = {
             "model": self.model,
             "max_tokens": self.max_tokens,
             "messages": [{"role": "system", "content": system}]
@@ -287,8 +294,8 @@ class OpenAICompatibleModel:
 
         choice = response.choices[0].message
         text = (choice.content or "").strip()
-        tool_calls: List[ToolCallRequest] = []
-        raw_content: List[Dict[str, Any]] = []
+        tool_calls: list[ToolCallRequest] = []
+        raw_content: list[dict[str, Any]] = []
         if text:
             raw_content.append({"type": "text", "text": text})
         for call in choice.tool_calls or []:
@@ -364,7 +371,7 @@ def _build_openai_model(model: str | None, max_tokens: int, temperature: float) 
     )
 
 
-def build_agent_model(llm_config: Dict[str, Any], temperature: float = 0.2) -> AgentModel:
+def build_agent_model(llm_config: dict[str, Any], temperature: float = 0.2) -> AgentModel:
     """Select an agent model from ``config.llm`` and the environment.
 
     ``llm.provider``:

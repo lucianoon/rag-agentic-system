@@ -2,15 +2,15 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
-from typing import Dict, Iterable, List, Sequence, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
 from sklearn.metrics.pairwise import cosine_similarity
 
-from .types import Document, RetrievalResult
 from .config import VectorStoreConfig
+from .types import Document, RetrievalResult
 
 logger = logging.getLogger(__name__)
 
@@ -20,10 +20,10 @@ class VectorStore:
     """In-memory vector store with cosine similarity search."""
 
     config: VectorStoreConfig
-    embeddings: Dict[str, NDArray[np.float32]] = field(default_factory=dict)
-    documents: Dict[str, Document] = field(default_factory=dict)
+    embeddings: dict[str, NDArray[np.float32]] = field(default_factory=dict)
+    documents: dict[str, Document] = field(default_factory=dict)
 
-    def add(self, items: Sequence[Tuple[Document, NDArray[np.float32]]]) -> None:
+    def add(self, items: Sequence[tuple[Document, NDArray[np.float32]]]) -> None:
         """Add documents and their embeddings to the store."""
         for doc, vector in items:
             if vector.shape[-1] != self.config.embedding_dimension:
@@ -48,7 +48,9 @@ class VectorStore:
             return np.zeros((0, self.config.embedding_dimension), dtype=np.float32)
         return np.stack(list(self.embeddings.values()))
 
-    def search(self, query_vector: NDArray[np.float32], top_k: int | None = None) -> List[RetrievalResult]:
+    def search(
+        self, query_vector: NDArray[np.float32], top_k: int | None = None
+    ) -> list[RetrievalResult]:
         if query_vector.size == 0 or not self.embeddings:
             return []
 
@@ -59,7 +61,7 @@ class VectorStore:
         top_k = top_k or self.config.top_k
         best_indices = np.argsort(similarities)[::-1][:top_k]
 
-        results: List[RetrievalResult] = []
+        results: list[RetrievalResult] = []
         for idx in best_indices:
             doc_id = identifiers[idx]
             doc = self.documents[doc_id]

@@ -6,7 +6,6 @@ import logging
 import sqlite3
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable, List, Optional
 
 from .config import MemoryConfig
 from .types import TaskLog, TaskStep
@@ -87,15 +86,15 @@ class MemoryStore:
             )
             conn.commit()
 
-    def recent(self, limit: int = 10) -> List[TaskLog]:
+    def recent(self, limit: int = 10) -> list[TaskLog]:
         if not self.config.enabled:
             return []
 
         with self._connect() as conn:
             rows = conn.execute(_SELECT_RECENT_SQL, (limit,)).fetchall()
 
-        logs: List[TaskLog] = []
-        for task_id, query, steps_json, metadata_json, created_at in rows:
+        logs: list[TaskLog] = []
+        for task_id, query, steps_json, metadata_json, _created_at in rows:
             steps_data = json.loads(steps_json)
             steps = [
                 TaskStep(

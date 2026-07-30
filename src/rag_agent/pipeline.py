@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import List, Optional
 
 from .config import AppConfig
 from .embeddings import EmbeddingBackend
@@ -44,13 +43,13 @@ class Pipeline:
         """Ensure that required resources are ready."""
         self.context.ingest_if_empty()
 
-    def retrieve_documents(self, query: str, top_k: Optional[int] = None) -> List[Document]:
+    def retrieve_documents(self, query: str, top_k: int | None = None) -> list[Document]:
         results = self.context.retriever.search(query, top_k=top_k)
         documents = [result.document for result in results]
         logger.debug("Retrieved %d documents for query '%s'", len(documents), query)
         return documents
 
-    def build_task_log(self, query: str, documents: List[Document], answer: str) -> TaskLog:
+    def build_task_log(self, query: str, documents: list[Document], answer: str) -> TaskLog:
         log = TaskLog(task_id=query, query=query)
         log.add_step(
             description="Retrieved documents",
@@ -60,7 +59,7 @@ class Pipeline:
         log.add_step(description="Generated answer", output=answer)
         return log
 
-    def respond(self, query: str, answer: str, documents: List[Document]) -> AgentResponse:
+    def respond(self, query: str, answer: str, documents: list[Document]) -> AgentResponse:
         return AgentResponse(
             answer=answer,
             references=[doc.id for doc in documents],
@@ -70,7 +69,7 @@ class Pipeline:
             ],
         )
 
-    def process(self, query: str, answer: str, documents: List[Document]) -> AgentResponse:
+    def process(self, query: str, answer: str, documents: list[Document]) -> AgentResponse:
         response = self.respond(query, answer, documents)
         log = self.build_task_log(query, documents, answer)
         self.context.memory.store(log)

@@ -467,13 +467,14 @@ pytest
 pytest tests/test_vector_store.py -v
 
 # Formatar código
-black src/ tests/
+ruff format .
 
-# Verificar qualidade do código
-flake8 src/ tests/
+# Lint e checagem de tipos
+ruff check .
+mypy
 ```
 
-A mesma suíte é executada automaticamente no CI (GitHub Actions) a cada push e pull request na branch `main` — veja `.github/workflows/ci.yml`.
+Os mesmos três gates — `ruff check`, `mypy` e `pytest` — rodam automaticamente no CI (GitHub Actions) a cada push e pull request na branch `main`; veja `.github/workflows/ci.yml`.
 
 ### Adicionando Novos Retrievers
 

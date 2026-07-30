@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, List, Sequence, Tuple
 
 from .config import RetrievalConfig
 from .embeddings import EmbeddingBackend, VectorArray
@@ -13,7 +13,7 @@ from .vector_store import VectorStore
 logger = logging.getLogger(__name__)
 
 
-def chunk_text(text: str, chunk_size: int, overlap: int) -> List[str]:
+def chunk_text(text: str, chunk_size: int, overlap: int) -> list[str]:
     """Simple text chunker operating on words."""
     if chunk_size <= 0:
         raise ValueError("chunk_size must be positive")
@@ -27,7 +27,7 @@ def chunk_text(text: str, chunk_size: int, overlap: int) -> List[str]:
     if not words:
         return []
 
-    chunks: List[str] = []
+    chunks: list[str] = []
     start = 0
     step = chunk_size - overlap
     while start < len(words):
@@ -58,8 +58,8 @@ class DocumentIngestor:
                 if path.is_file() and path.suffix.lower() in self.config.file_extensions:
                     yield path
 
-    def load_documents(self) -> List[Document]:
-        documents: List[Document] = []
+    def load_documents(self) -> list[Document]:
+        documents: list[Document] = []
         for path in self._iter_files():
             try:
                 document = Document.from_path(path)
@@ -70,8 +70,8 @@ class DocumentIngestor:
         logger.info("Loaded %d raw documents from sources.", len(documents))
         return documents
 
-    def load_chunks(self) -> List[Document]:
-        chunked: List[Document] = []
+    def load_chunks(self) -> list[Document]:
+        chunked: list[Document] = []
         for document in self.load_documents():
             chunks = chunk_text(document.content, self.config.chunk_size, self.config.chunk_overlap)
             if not chunks:
@@ -111,14 +111,14 @@ class FileSystemRetriever:
         if self.embeddings.config.use_tfidf_fallback:
             self.embeddings.fit(corpus)
 
-        vectors: List[Tuple[Document, VectorArray]] = []
+        vectors: list[tuple[Document, VectorArray]] = []
         for doc in documents:
             vector = self.embeddings.embed_single(doc.content)
             vectors.append((doc, vector))
 
         self.vector_store.add(vectors)
 
-    def search(self, query: str, top_k: int | None = None) -> List[RetrievalResult]:
+    def search(self, query: str, top_k: int | None = None) -> list[RetrievalResult]:
         if not query.strip():
             return []
 
