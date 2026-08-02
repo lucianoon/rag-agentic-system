@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from .llm import NO_RESULTS_MARKER
 from .pipeline import ExecutionContext
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 MAX_EXCERPT_CHARS = 500
 
-TOOL_DEFINITIONS: List[Dict[str, Any]] = [
+TOOL_DEFINITIONS: list[dict[str, Any]] = [
     {
         "name": "search_documents",
         "description": (
@@ -44,7 +44,10 @@ TOOL_DEFINITIONS: List[Dict[str, Any]] = [
         "input_schema": {
             "type": "object",
             "properties": {
-                "limit": {"type": "integer", "description": "Maximum entries to return (default 5)."}
+                "limit": {
+                    "type": "integer",
+                    "description": "Maximum entries to return (default 5).",
+                }
             },
             "required": [],
         },
@@ -64,7 +67,7 @@ class ToolExecutor:
     context: ExecutionContext
     default_top_k: int | None = None
 
-    def execute(self, name: str, tool_input: Dict[str, Any]) -> Tuple[str, List[str]]:
+    def execute(self, name: str, tool_input: dict[str, Any]) -> tuple[str, list[str]]:
         if name == "search_documents":
             return self._search_documents(tool_input)
         if name == "get_task_history":
@@ -72,7 +75,7 @@ class ToolExecutor:
         logger.warning("Agent requested unknown tool: %s", name)
         return f"Error: unknown tool '{name}'.", []
 
-    def _search_documents(self, tool_input: Dict[str, Any]) -> Tuple[str, List[str]]:
+    def _search_documents(self, tool_input: dict[str, Any]) -> tuple[str, list[str]]:
         query = str(tool_input.get("query", "")).strip()
         top_k = tool_input.get("top_k") or self.default_top_k
         results = self.context.retriever.search(query, top_k=top_k)
@@ -89,7 +92,7 @@ class ToolExecutor:
             references.append(doc.id)
         return "\n\n".join(lines), references
 
-    def _get_task_history(self, tool_input: Dict[str, Any]) -> Tuple[str, List[str]]:
+    def _get_task_history(self, tool_input: dict[str, Any]) -> tuple[str, list[str]]:
         limit = int(tool_input.get("limit") or 5)
         logs = self.context.memory.recent(limit=limit)
         if not logs:

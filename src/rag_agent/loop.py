@@ -12,7 +12,7 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .llm import AgentModel
 from .pipeline import ExecutionContext
@@ -35,8 +35,12 @@ ITERATION_LIMIT_ANSWER = (
 )
 
 _STOPWORDS = frozenset(
-    "a an and are as at be based by for from has have if in into is it its of "
-    "on or should that the their this to was were will with must not".split()
+    [
+        "a", "an", "and", "are", "as", "at", "be", "based", "by", "for",
+        "from", "has", "have", "if", "in", "into", "is", "it", "its", "of",
+        "on", "or", "should", "that", "the", "their", "this", "to", "was",
+        "were", "will", "with", "must", "not",
+    ]
 )
 
 
@@ -44,12 +48,12 @@ def _content_tokens(text: str) -> set[str]:
     return {t for t in re.findall(r"[a-z0-9]+", text.lower()) if t not in _STOPWORDS}
 
 
-def _sentences(text: str) -> List[str]:
+def _sentences(text: str) -> list[str]:
     parts = re.split(r"(?<=[.!?])\s+|\n+", text.strip())
     return [p.strip() for p in parts if p.strip()]
 
 
-def grounding_score(answer: str, evidence: List[str], threshold: float = 0.5) -> float:
+def grounding_score(answer: str, evidence: list[str], threshold: float = 0.5) -> float:
     """Fraction of answer sentences lexically supported by the evidence.
 
     A deterministic proxy for groundedness (not semantic entailment): a
@@ -77,12 +81,12 @@ class LoopResult:
     """Outcome of one agent-loop run."""
 
     answer: str
-    steps: List[TaskStep] = field(default_factory=list)
-    references: List[str] = field(default_factory=list)
+    steps: list[TaskStep] = field(default_factory=list)
+    references: list[str] = field(default_factory=list)
     iterations: int = 0
     tool_calls: int = 0
-    confidence: Optional[float] = None
-    verified: Optional[bool] = None
+    confidence: float | None = None
+    verified: bool | None = None
 
 
 class AgentLoop:
@@ -92,7 +96,7 @@ class AgentLoop:
         self,
         context: ExecutionContext,
         model: AgentModel,
-        default_top_k: Optional[int] = None,
+        default_top_k: int | None = None,
     ):
         self.context = context
         self.model = model
@@ -102,9 +106,9 @@ class AgentLoop:
         config = self.context.config
         max_iterations = max(1, config.agent.max_iterations)
 
-        messages: List[Dict[str, Any]] = [{"role": "user", "content": task}]
+        messages: list[dict[str, Any]] = [{"role": "user", "content": task}]
         result = LoopResult(answer="")
-        evidence: List[str] = []
+        evidence: list[str] = []
         seen_references: set[str] = set()
 
         for iteration in range(1, max_iterations + 1):
@@ -149,7 +153,7 @@ class AgentLoop:
         self._verify(result, evidence)
         return result
 
-    def _verify(self, result: LoopResult, evidence: List[str]) -> None:
+    def _verify(self, result: LoopResult, evidence: list[str]) -> None:
         verification = self.context.config.verification
         if not (verification.enabled and verification.factual_checks):
             return

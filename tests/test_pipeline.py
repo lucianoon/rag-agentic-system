@@ -1,6 +1,13 @@
 """Integration-style tests for the pipeline and the agent (no LLM, no network)."""
 
-from rag_agent import AgenticRAG, AppConfig, ExecutionContext, FileSystemRetriever, MemoryStore, VectorStore
+from rag_agent import (
+    AgenticRAG,
+    AppConfig,
+    ExecutionContext,
+    FileSystemRetriever,
+    MemoryStore,
+    VectorStore,
+)
 from rag_agent.config import EmbeddingConfig, MemoryConfig, RetrievalConfig, VectorStoreConfig
 from rag_agent.embeddings import EmbeddingBackend
 from rag_agent.pipeline import Pipeline

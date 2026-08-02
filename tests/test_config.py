@@ -1,6 +1,5 @@
 """Tests for YAML configuration loading."""
 
-from pathlib import Path
 
 from rag_agent.config import DEFAULT_CONFIG_PATH, AppConfig, load_config
 

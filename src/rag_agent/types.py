@@ -1,10 +1,11 @@
 """Core data models used across the RAG Agentic System."""
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any
 
 
 @dataclass(slots=True)
@@ -12,10 +13,10 @@ class Document:
     """Represents a raw or processed document."""
     id: str
     content: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
-    def from_path(cls, path: Path, source: str = "filesystem") -> "Document":
+    def from_path(cls, path: Path, source: str = "filesystem") -> Document:
         text = path.read_text(encoding="utf-8")
         metadata = {
             "source": source,
@@ -37,7 +38,7 @@ class TaskStep:
     """Represents a single reasoning or action step taken by the agent."""
     description: str
     output: str
-    references: List[str] = field(default_factory=list)
+    references: list[str] = field(default_factory=list)
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
 
@@ -46,11 +47,13 @@ class TaskLog:
     """Tracks the sequence of steps and results for a task."""
     task_id: str
     query: str
-    steps: List[TaskStep] = field(default_factory=list)
+    steps: list[TaskStep] = field(default_factory=list)
     created_at: datetime = field(default_factory=datetime.utcnow)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def add_step(self, description: str, output: str, references: Optional[Iterable[str]] = None) -> None:
+    def add_step(
+        self, description: str, output: str, references: Iterable[str] | None = None
+    ) -> None:
         self.steps.append(
             TaskStep(
                 description=description,
@@ -64,9 +67,9 @@ class TaskLog:
 class AgentResponse:
     """Final response returned to the user after task completion."""
     answer: str
-    references: List[str]
-    steps: List[TaskStep]
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    references: list[str]
+    steps: list[TaskStep]
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 __all__ = [

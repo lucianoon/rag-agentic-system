@@ -1,14 +1,21 @@
 """Tests for document ingestion and agent behavior."""
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import numpy as np
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from rag_agent import AgenticRAG, AppConfig, ExecutionContext, FileSystemRetriever, MemoryStore, VectorStore
+from rag_agent import (
+    AgenticRAG,
+    AppConfig,
+    ExecutionContext,
+    FileSystemRetriever,
+    MemoryStore,
+    VectorStore,
+)
 from rag_agent.config import EmbeddingConfig, MemoryConfig, RetrievalConfig, VectorStoreConfig
 from rag_agent.retrieval import chunk_text
 
@@ -33,7 +40,12 @@ def build_agent(tmp_path):
     config = AppConfig(
         embeddings=EmbeddingConfig(use_tfidf_fallback=True, vector_dimension=3),
         vector_store=VectorStoreConfig(embedding_dimension=3, top_k=3),
-        retrieval=RetrievalConfig(sources=[str(tmp_path)], file_extensions=[".txt", ".md"], chunk_size=8, chunk_overlap=2),
+        retrieval=RetrievalConfig(
+            sources=[str(tmp_path)],
+            file_extensions=[".txt", ".md"],
+            chunk_size=8,
+            chunk_overlap=2,
+        ),
         memory=MemoryConfig(enabled=False, database_path=str(tmp_path / "memory.db")),
     )
     embeddings = DummyEmbeddings()

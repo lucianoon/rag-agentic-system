@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Iterable, List, Optional, Sequence, TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -23,8 +24,8 @@ class EmbeddingBackend:
     """Wrapper around embedding backends with optional TF-IDF fallback."""
 
     config: EmbeddingConfig
-    _st_model: Optional["SentenceTransformer"] = field(default=None, init=False, repr=False)
-    _vectorizer: Optional["TfidfVectorizer"] = field(default=None, init=False, repr=False)
+    _st_model: SentenceTransformer | None = field(default=None, init=False, repr=False)
+    _vectorizer: TfidfVectorizer | None = field(default=None, init=False, repr=False)
 
     @property
     def has_sentence_transformer(self) -> bool:
@@ -58,7 +59,8 @@ class EmbeddingBackend:
             from sklearn.feature_extraction.text import TfidfVectorizer
         except ImportError as exc:
             raise RuntimeError(
-                "scikit-learn is required for TF-IDF fallback. Install with `pip install scikit-learn`."
+                "scikit-learn is required for TF-IDF fallback. "
+                "Install with `pip install scikit-learn`."
             ) from exc
 
         logger.warning("Using TF-IDF fallback embedding backend.")
@@ -101,7 +103,8 @@ class EmbeddingBackend:
 
         if not self.config.use_tfidf_fallback:
             raise RuntimeError(
-                "No embedding backend available (sentence-transformers missing and TF-IDF fallback disabled)."
+                "No embedding backend available (sentence-transformers missing "
+                "and TF-IDF fallback disabled)."
             )
 
         self._ensure_tfidf()
@@ -127,7 +130,9 @@ class EmbeddingBackend:
 
     def embed_single(self, text: str) -> VectorArray:
         vectors = self.embed([text])
-        return vectors[0] if len(vectors) else np.zeros((self.config.vector_dimension,), dtype=np.float32)
+        if len(vectors):
+            return vectors[0]
+        return np.zeros((self.config.vector_dimension,), dtype=np.float32)
 
 
 __all__ = ["EmbeddingBackend", "VectorArray"]

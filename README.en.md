@@ -443,14 +443,16 @@ pytest
 pytest tests/test_vector_store.py -v
 
 # Format the code
-black src/ tests/
+ruff format .
 
-# Check code quality
-flake8 src/ tests/
+# Lint and type-check
+ruff check .
+mypy
 ```
 
-The same suite runs automatically in CI (GitHub Actions) on every push and pull
-request to `main` — see `.github/workflows/ci.yml`.
+The same three gates — `ruff check`, `mypy` and `pytest` — run automatically in
+CI (GitHub Actions) on every push and pull request to `main`; see
+`.github/workflows/ci.yml`.
 
 ### Adding new retrievers
 

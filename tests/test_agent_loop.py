@@ -4,6 +4,7 @@ import importlib.util
 import json
 
 import pytest
+from test_pipeline import build_context, write_docs
 
 from rag_agent import AgenticRAG
 from rag_agent.llm import (
@@ -13,10 +14,8 @@ from rag_agent.llm import (
     ToolCallRequest,
     build_agent_model,
 )
-from rag_agent.loop import AgentLoop, ITERATION_LIMIT_ANSWER, grounding_score
+from rag_agent.loop import AgentLoop, grounding_score
 from rag_agent.tools import ToolExecutor
-
-from test_pipeline import build_context, write_docs
 
 
 class AlwaysSearchingModel:
@@ -34,7 +33,9 @@ class AlwaysSearchingModel:
         )
         return ModelTurn(
             tool_calls=[call],
-            raw_content=[{"type": "tool_use", "id": call.id, "name": call.name, "input": call.input}],
+            raw_content=[
+                {"type": "tool_use", "id": call.id, "name": call.name, "input": call.input}
+            ],
         )
 
 

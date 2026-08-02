@@ -1,0 +1,19 @@
+# Config do ruff. Substitui black + flake8, que saíram do requirements.txt.
+line-length = 100
+target-version = "py311"
+src = ["src", "."]
+
+[lint]
+select = [
+    "E",   # pycodestyle
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+]
+
+[lint.per-file-ignores]
+# Os testes inserem src/ no sys.path antes de importar o pacote.
+"tests/*" = ["E402"]

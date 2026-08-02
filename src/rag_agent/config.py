@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
@@ -13,7 +13,7 @@ DEFAULT_CONFIG_PATH = Path(__file__).resolve().parents[2] / "config" / "default.
 @dataclass(slots=True)
 class EmbeddingConfig:
     model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
-    device: Optional[str] = None
+    device: str | None = None
     use_tfidf_fallback: bool = True
     vector_dimension: int = 384
 
@@ -28,8 +28,8 @@ class VectorStoreConfig:
 
 @dataclass(slots=True)
 class RetrievalConfig:
-    sources: List[str] = field(default_factory=lambda: ["data/processed"])
-    file_extensions: List[str] = field(default_factory=lambda: [".txt", ".md"])
+    sources: list[str] = field(default_factory=lambda: ["data/processed"])
+    file_extensions: list[str] = field(default_factory=lambda: [".txt", ".md"])
     chunk_size: int = 512
     chunk_overlap: int = 64
 
@@ -66,10 +66,10 @@ class AppConfig:
     memory: MemoryConfig = field(default_factory=MemoryConfig)
     verification: VerificationConfig = field(default_factory=VerificationConfig)
     agent: AgentConfig = field(default_factory=AgentConfig)
-    llm: Dict[str, Any] = field(default_factory=dict)
+    llm: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "AppConfig":
+    def from_dict(cls, data: dict[str, Any]) -> AppConfig:
         return cls(
             embeddings=EmbeddingConfig(**data.get("embeddings", {})),
             vector_store=VectorStoreConfig(**data.get("vector_store", {})),
@@ -81,7 +81,7 @@ class AppConfig:
         )
 
 
-def load_config(path: Optional[Path] = None) -> AppConfig:
+def load_config(path: Path | None = None) -> AppConfig:
     """Load configuration from YAML file or defaults."""
     config_path = path or DEFAULT_CONFIG_PATH
     if not config_path.exists():

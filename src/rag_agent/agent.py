@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import List, Optional
 
 from .llm import AgentModel, build_agent_model
 from .loop import AgentLoop
@@ -22,7 +21,7 @@ class AgenticRAG:
     model that keeps the exact same loop running offline.
     """
 
-    def __init__(self, context: ExecutionContext, model: Optional[AgentModel] = None) -> None:
+    def __init__(self, context: ExecutionContext, model: AgentModel | None = None) -> None:
         self.context = context
         self.pipeline = Pipeline(context)
         self._model = model
@@ -48,7 +47,7 @@ class AgenticRAG:
         self._initialized = True
         logger.info("RAG Agentic System ready")
 
-    def query(self, question: str, top_k: Optional[int] = None) -> AgentResponse:
+    def query(self, question: str, top_k: int | None = None) -> AgentResponse:
         """Run a task through the agent loop and return the final answer."""
         if not self._initialized:
             self.initialize()
@@ -90,7 +89,7 @@ class AgenticRAG:
             metadata=metadata,
         )
 
-    def add_documents(self, file_paths: List[str]) -> int:
+    def add_documents(self, file_paths: list[str]) -> int:
         """Add specific text/Markdown documents to the active vector store.
 
         Args:
@@ -103,7 +102,7 @@ class AgenticRAG:
             return 0
 
         allowed_extensions = {ext.lower() for ext in self.context.config.retrieval.file_extensions}
-        chunked_documents: List[Document] = []
+        chunked_documents: list[Document] = []
 
         for raw_path in file_paths:
             path = Path(raw_path).expanduser().resolve()
@@ -148,7 +147,11 @@ class AgenticRAG:
         ]
         self.context.vector_store.clear()
         self.context.vector_store.add(vectors)
-        logger.info("Added %d document chunks from %d files", len(chunked_documents), len(file_paths))
+        logger.info(
+            "Added %d document chunks from %d files",
+            len(chunked_documents),
+            len(file_paths),
+        )
         return len(chunked_documents)
 
     def clear_memory(self) -> None:
