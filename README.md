@@ -52,6 +52,21 @@ pip install -r requirements.txt
 python main.py
 ```
 
+### Docker (alternativa)
+
+```bash
+# Modo interativo (funciona sem chave de API: cai no modelo offline)
+docker compose run --rm rag-agent
+
+# Tarefa única
+docker compose run --rm rag-agent --task "Resuma o documento X"
+
+# Adicionar documentos ao corpus
+docker compose run --rm rag-agent --add-docs data/processed/meu-doc.md
+```
+
+O corpus e a memória persistem em `./data` (volume montado).
+
 ## 📖 Como Usar
 
 ### Modo Interativo (Padrão)

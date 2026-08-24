@@ -1,0 +1,13 @@
+services:
+  rag-agent:
+    build: .
+    image: rag-agentic-system:latest
+    environment:
+      # Opcional: sem chave, o sistema usa o modelo determinístico offline
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - RAG_CONFIG=/app/config/default.yaml
+    volumes:
+      # Corpus e índice persistem fora do container
+      - ./data:/app/data
+    stdin_open: true
+    tty: true
