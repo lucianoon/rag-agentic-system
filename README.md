@@ -8,11 +8,13 @@
 
 Um sistema completo de **Retrieval-Augmented Generation (RAG) com comportamento agêntico** para recuperação e processamento inteligente de informações.
 
-A diferença para o [Enterprise RAG System](https://github.com/lucianoon/enterprise-rag-system)
-está no **número de passos**: lá a recuperação acontece uma vez e o foco é a qualidade da
-lista ranqueada (fusão híbrida BM25 + vetorial, Recall@K / MRR). Aqui a recuperação é uma
-**ferramenta** que o modelo chama quantas vezes precisar, reformulando a consulta entre as
-chamadas — o foco é responder perguntas que uma única query não resolve.
+> **Não é o mesmo projeto que o [Enterprise RAG System](https://github.com/lucianoon/enterprise-rag-system).**
+> A diferença está no **número de passos**. Lá a recuperação acontece **uma vez**
+> e o objetivo é a qualidade da lista ranqueada (fusão híbrida BM25 + vetorial,
+> Recall@K / MRR). Aqui a recuperação é uma **ferramenta** que o modelo chama
+> quantas vezes precisar, reformulando a consulta entre as chamadas. Problemas
+> diferentes: aquele repo otimiza qualidade de ranqueamento, este otimiza
+> raciocínio em múltiplos passos sobre um corpus.
 
 ## ✨ Funcionalidades
 

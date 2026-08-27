@@ -12,10 +12,10 @@ refines the query and searches again when the first results fall short, and
 iterates under a bounded step cap. The final answer is then scored for
 groundedness against the evidence the tools actually returned.
 
-> **Different from [Enterprise RAG System](https://github.com/lucianoon/enterprise-rag-system):**
-> that repo retrieves once and optimizes *ranking quality* (hybrid BM25 + vector
-> fusion, Recall@K / MRR). This one optimizes *multi-step reasoning* — questions
-> a single query cannot answer.
+> **Not the same project as [Enterprise RAG System](https://github.com/lucianoon/enterprise-rag-system).**
+> That repo retrieves **once** and optimizes *ranking quality* (hybrid BM25 +
+> vector fusion, Recall@K / MRR). This one optimizes *multi-step reasoning* —
+> questions a single query cannot answer.
 
 ## ✨ Features
 
